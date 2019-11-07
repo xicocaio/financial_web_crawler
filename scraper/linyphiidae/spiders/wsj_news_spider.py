@@ -3,6 +3,7 @@ from scrapy.http import JSONRequest
 
 import json
 
+
 class WSJNewsSpider(scrapy.Spider):
     name = "wsj_news"
 
@@ -60,7 +61,7 @@ class WSJNewsSpider(scrapy.Spider):
                 oldest_res_date = oldest_date_obj['CreateTimestamp']['Value']
 
                 yield {
-                    'headlines_response': json_response['HeadlinesResponse'],
+                    'HeadlinesResponse': json_response['HeadlinesResponse'],
                 }
 
                 # conidtion for stopping is if max_requests was or max end time was reached
@@ -71,7 +72,7 @@ class WSJNewsSpider(scrapy.Spider):
                     query_params = self.start_query_params.copy()
                     query_params['datetime'] = oldest_res_date
                     query_params['direction'] = 'older'
-                    # query_params['docid'] = doc_id
+                    query_params['docid'] = doc_id
 
                     yield JSONRequest(url=response.url, data=query_params,
                                       callback=self.parse)

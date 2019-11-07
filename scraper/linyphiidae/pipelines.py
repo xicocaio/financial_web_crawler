@@ -15,7 +15,7 @@ class StoreNewsPipeline(object):
         # considering only seconds
         filename = spider.crawler.stats.get_value(
             'start_time').isoformat(timespec='seconds')
-        input_fname = spider.abs_data_dir + '/{}.jl'.format(filename)
+        input_fname = spider.abs_data_dir + '{}.jl'.format(filename)
 
         # creating file if non existent, and appending the json responses of
         # each request into the file

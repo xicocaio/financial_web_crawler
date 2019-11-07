@@ -1,10 +1,12 @@
 # from jobs.scrap import scrap_market_watch
 # from jobs.upload import load_to_gbq
 # from jobs.query import run_all_queries
-import os, sys
+import os
+import sys
 from datetime import datetime
 
 from crawler_manager import run_crawler
+from csv_generator import generate_wsj_csv
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = BASE_DIR + '/data'
@@ -12,7 +14,7 @@ DATA_DIR = BASE_DIR + '/data'
 
 # generating dir path for storing scrapped data
 def generate_dir(stock, website='wsj_news'):
-    abs_dir_path = DATA_DIR + '/{}/{}'.format(website, stock.upper())
+    abs_dir_path = DATA_DIR + '/{}/{}/'.format(website, stock.upper())
 
     # directory generation
     if abs_dir_path and not os.path.isdir(abs_dir_path):
@@ -44,9 +46,8 @@ def main(**kwargs):
     if step == 'scrap' or step == 'all':
         run_crawler(abs_data_dir_path, kwargs.get('mode'), max_requests, end_time, start_time, kwargs.get('website'),
                     stock)
-
-    # if step == 'query' or step == 'all':
-    #     extractor_json_csv()
+    if step == 'gen_csv':
+        generate_wsj_csv(abs_data_dir_path)
 
 
 if __name__ == '__main__':
