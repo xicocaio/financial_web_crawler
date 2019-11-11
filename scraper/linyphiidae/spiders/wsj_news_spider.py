@@ -3,6 +3,11 @@ from scrapy.http import JsonRequest
 
 import json
 
+SYMBOLS_DICT = {
+    'btcusd': 'symb!~!US:BTCUSD',
+    'appl': 'symb!~!US:AAPL'
+}
+
 
 class WSJNewsSpider(scrapy.Spider):
     name = "wsj_news"
@@ -12,14 +17,6 @@ class WSJNewsSpider(scrapy.Spider):
     reqs_number = 0
 
     start_url = 'https://api.wsj.net/api/slinger/headlines/806/11'
-    symbols_dict = {
-        'btcusd': 'symb!~!US:BTCUSD',
-        'aapl': 'symb!~!US:AAPL'
-    }
-    start_query_params = {
-        'version': '3',
-        'opProp': symbols_dict['btcusd']
-    }
 
     # for adding more than one use ',!', example:
     # 'symb!~!US:BTCUSD!,!symb!~!US:AAPL'
@@ -40,6 +37,11 @@ class WSJNewsSpider(scrapy.Spider):
 
         self.stock = stock
         self.abs_data_dir = abs_data_dir
+
+        self.start_query_params = {
+            'version': '3',
+            'opProp': SYMBOLS_DICT[self.stock]
+        }
 
     def start_requests(self):
         yield JsonRequest(url=self.start_url, data=self.start_query_params)

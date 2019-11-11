@@ -4,6 +4,11 @@ import csv
 import json
 import pandas as pd
 
+SYMBOLS_DICT = {
+    'btcusd': 'Bitcoin',
+    'appl': 'Apple'
+}
+
 
 def remove_duplicates(filename):
     in_file = glob.glob(filename)[0]
@@ -15,7 +20,7 @@ def remove_duplicates(filename):
     df.to_csv(filename, sep=';', encoding='utf-8', index=False)
 
 
-def generate_wsj_csv(abs_data_dir):
+def generate_wsj_csv(abs_data_dir, stock='btcusd'):
     all_files = glob.glob(abs_data_dir + "*.jl")
 
     for jl_file in all_files:
@@ -45,6 +50,6 @@ def generate_wsj_csv(abs_data_dir):
                             abstract = item['Abstract']['ABSTRACT']['#text'] if 'Abstract' in item else None
 
                             csv_writter.writerow(
-                                [doc_id, creation_date, 'Bitcoin', headline, sub_headline, abstract])
+                                [doc_id, creation_date, SYMBOLS_DICT[stock], headline, sub_headline, abstract])
 
         remove_duplicates(complete_fpath)

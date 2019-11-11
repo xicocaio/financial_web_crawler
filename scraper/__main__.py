@@ -23,12 +23,14 @@ def generate_dir(stock, website='wsj_news'):
 
     return abs_dir_path
 
+
 # validating the avilable modes
 def validate_mode(mode_option):
     if mode_option not in ['greedy']:
         raise ValueError('\'{}\' mode option is invalid'.format(mode_option))
 
     return mode_option
+
 
 # validating date time format
 def validate_date(date_str):
@@ -54,7 +56,7 @@ def main(**kwargs):
         run_crawler(abs_data_dir_path, mode, max_requests, end_time, start_time, kwargs.get('website'),
                     stock)
     if step == 'gen_csv' or step == 'all':
-        generate_wsj_csv(abs_data_dir_path)
+        generate_wsj_csv(abs_data_dir_path, stock)
 
 
 if __name__ == '__main__':
