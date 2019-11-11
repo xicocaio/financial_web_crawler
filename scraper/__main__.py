@@ -46,7 +46,7 @@ def main(**kwargs):
     if step == 'scrap' or step == 'all':
         run_crawler(abs_data_dir_path, kwargs.get('mode'), max_requests, end_time, start_time, kwargs.get('website'),
                     stock)
-    if step == 'gen_csv':
+    if step == 'gen_csv' or step == 'all':
         generate_wsj_csv(abs_data_dir_path)
 
 

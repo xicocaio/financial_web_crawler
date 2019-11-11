@@ -1,5 +1,5 @@
 import scrapy
-from scrapy.http import JSONRequest
+from scrapy.http import JsonRequest
 
 import json
 
@@ -42,7 +42,7 @@ class WSJNewsSpider(scrapy.Spider):
         self.abs_data_dir = abs_data_dir
 
     def start_requests(self):
-        yield JSONRequest(url=self.start_url, data=self.start_query_params)
+        yield JsonRequest(url=self.start_url, data=self.start_query_params)
 
     def parse(self, response):
         json_response = json.loads(response.body_as_unicode())
@@ -69,10 +69,13 @@ class WSJNewsSpider(scrapy.Spider):
                         self.end_time and oldest_res_date <= self.end_time)
 
                 if not can_stop:
+                    # updating params for next request
                     query_params = self.start_query_params.copy()
                     query_params['datetime'] = oldest_res_date
                     query_params['direction'] = 'older'
+
+                    # This param seems to be useless. But the official website request uses it.
                     query_params['docid'] = doc_id
 
-                    yield JSONRequest(url=response.url, data=query_params,
+                    yield JsonRequest(url=response.url, data=query_params,
                                       callback=self.parse)

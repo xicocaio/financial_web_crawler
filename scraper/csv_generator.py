@@ -2,6 +2,17 @@ import glob
 import os
 import csv
 import json
+import pandas as pd
+
+
+def remove_duplicates(filename):
+    in_file = glob.glob(filename)[0]
+
+    df = pd.read_csv(in_file, index_col=None, header=0, sep=';')
+
+    df.drop_duplicates(subset=['doc_id'], inplace=True)
+
+    df.to_csv(filename, sep=';', encoding='utf-8', index=False)
 
 
 def generate_wsj_csv(abs_data_dir):
@@ -9,8 +20,9 @@ def generate_wsj_csv(abs_data_dir):
 
     for jl_file in all_files:
         filename = os.path.basename(jl_file).split('.jl')[0]  # getting only filename without extension and path
+        complete_fpath = abs_data_dir + filename + '.csv'
 
-        with open(abs_data_dir + filename + '.csv', "w") as csv_file, open(jl_file, "r") as input_file:
+        with open(complete_fpath, "w") as csv_file, open(jl_file, "r") as input_file:
             csv_writter = csv.writer(csv_file, delimiter=';')
             csv_writter.writerow(
                 ['doc_id', 'datetime', 'company', 'title', 'sub_headline', 'abstract'])
@@ -34,3 +46,5 @@ def generate_wsj_csv(abs_data_dir):
 
                             csv_writter.writerow(
                                 [doc_id, creation_date, 'Bitcoin', headline, sub_headline, abstract])
+
+        remove_duplicates(complete_fpath)
