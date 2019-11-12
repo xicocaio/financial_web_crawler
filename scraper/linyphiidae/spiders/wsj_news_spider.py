@@ -5,7 +5,7 @@ import json
 
 SYMBOLS_DICT = {
     'btcusd': 'symb!~!US:BTCUSD',
-    'appl': 'symb!~!US:AAPL',
+    'aapl': 'symb!~!US:AAPL',
     'sp500': 'symb!~!US:SPX'
 }
 
@@ -33,8 +33,8 @@ class WSJNewsSpider(scrapy.Spider):
             self.end_time = None
         else:
             self.max_requests = max_requests if max_requests else 2
-            self.end_time = end_time if end_time else None
-            self.start_time = start_time if start_time else None
+            self.end_time = end_time if end_time else None  # oldest possible time
+            self.start_time = start_time if start_time else None  # time to start requests
 
         self.stock = stock
         self.abs_data_dir = abs_data_dir
@@ -43,6 +43,10 @@ class WSJNewsSpider(scrapy.Spider):
             'version': '3',
             'opProp': SYMBOLS_DICT[self.stock]
         }
+
+        if start_time:
+            self.start_query_params['datetime'] = start_time
+            self.start_query_params['direction'] = 'older'
 
     def start_requests(self):
         yield JsonRequest(url=self.start_url, data=self.start_query_params)
