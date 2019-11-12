@@ -9,7 +9,7 @@ spider_classes = {
 }
 
 
-def run_crawler(abs_data_dir, mode, max_requests, end_time, start_time, website, stock):
+def run_crawler(abs_data_dir, mode, max_requests, end_time, start_time, website, stock, max_elems):
     # default values
     website = website if website else 'wsj_news'
 
@@ -18,5 +18,5 @@ def run_crawler(abs_data_dir, mode, max_requests, end_time, start_time, website,
     os.environ.setdefault('SCRAPY_SETTINGS_MODULE', settings_file_path)
 
     process = CrawlerProcess(get_project_settings())
-    process.crawl(spider_classes[website], mode, max_requests, end_time, start_time, abs_data_dir, stock)
+    process.crawl(spider_classes[website], mode, max_requests, end_time, start_time, abs_data_dir, stock, max_elems)
     process.start()

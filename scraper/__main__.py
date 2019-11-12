@@ -49,12 +49,13 @@ def main(**kwargs):
     start_time = validate_date(kwargs.get('start_time')) if 'start_time' in kwargs else None
     mode = validate_mode(kwargs.get('mode')) if 'mode' in kwargs else None
     stock = kwargs.get('stock') if 'stock' in kwargs else 'btcusd'
+    max_elems = int(kwargs.get('max_elems')) if 'max_elems' in kwargs else 100
 
     abs_data_dir_path = generate_dir(stock=stock)
 
     if step == 'scrap' or step == 'all':
         run_crawler(abs_data_dir_path, mode, max_requests, end_time, start_time, kwargs.get('website'),
-                    stock)
+                    stock, max_elems)
     if step == 'gen_csv' or step == 'all':
         generate_wsj_csv(abs_data_dir_path, stock)
 

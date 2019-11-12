@@ -17,12 +17,11 @@ class WSJNewsSpider(scrapy.Spider):
     initial_time = None
     reqs_number = 0
 
-    start_url = 'https://api.wsj.net/api/slinger/headlines/806/11'
-
     # for adding more than one use ',!', example:
     # 'symb!~!US:BTCUSD!,!symb!~!US:AAPL'
 
-    def __init__(self, mode, max_requests, end_time, start_time, abs_data_dir='', stock='btcusd', *args, **kwargs):
+    def __init__(self, mode, max_requests, end_time, start_time, abs_data_dir='', stock='btcusd', max_elems=100, *args,
+                 **kwargs):
         super(WSJNewsSpider, self).__init__(*args, **kwargs)
 
         # there are only to modes, greedy and default
@@ -31,10 +30,12 @@ class WSJNewsSpider(scrapy.Spider):
                 'WARNING: the greedy mode runs to exhausting all data available in the desired website about the specified stock this may lead to banishment if not done properly')
             self.max_requests = None
             self.end_time = None
+            self.start_url = 'https://api.wsj.net/api/slinger/headlines/806/' + str(2500)  # tested max number of elements on response
         else:
             self.max_requests = max_requests if max_requests else 2
             self.end_time = end_time if end_time else None  # oldest possible time
             self.start_time = start_time if start_time else None  # time to start requests
+            self.start_url = 'https://api.wsj.net/api/slinger/headlines/806/' + str(max_elems)
 
         self.stock = stock
         self.abs_data_dir = abs_data_dir
