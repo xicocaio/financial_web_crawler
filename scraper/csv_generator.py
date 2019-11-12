@@ -6,7 +6,7 @@ import pandas as pd
 
 SYMBOLS_DICT = {
     'btcusd': 'Bitcoin',
-    'appl': 'Apple',
+    'aapl': 'Apple',
     'sp500': 'S&P_500'
 }
 
@@ -45,10 +45,13 @@ def generate_wsj_csv(abs_data_dir, stock='btcusd'):
                         for item in json_list['Summary']:
                             doc_id = int(item['DocumentIdUri'].split('/')[-1])
                             creation_date = item['CreateTimestamp']['Value']
-                            headline = item['Headline']
+                            headline = item['Headline'] if item['Headline'] is None else item['Headline'].replace('\n',
+                                                                                                                  '').strip()
                             # body_headline = item['BodyHeadline'] # for some reason the headline appears twice in the json, with different keys, not sure if they can differ sometimes
-                            sub_headline = item.get("SubHeadline", None)
-                            abstract = item['Abstract']['ABSTRACT']['#text'] if 'Abstract' in item else None
+                            sub_headline = item.get('SubHeadline') if item.get('SubHeadline') is None else item[
+                                'SubHeadline'].replace('\n', '').strip()
+                            abstract = item['Abstract']['ABSTRACT']['#text'].replace('\n',
+                                                                                     '').strip() if 'Abstract' in item else None
 
                             csv_writter.writerow(
                                 [doc_id, creation_date, SYMBOLS_DICT[stock], headline, sub_headline, abstract])
