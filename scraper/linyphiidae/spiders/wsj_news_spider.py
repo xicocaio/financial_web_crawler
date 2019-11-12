@@ -5,7 +5,8 @@ import json
 
 SYMBOLS_DICT = {
     'btcusd': 'symb!~!US:BTCUSD',
-    'appl': 'symb!~!US:AAPL'
+    'appl': 'symb!~!US:AAPL',
+    'sp500': 'symb!~!US:SPX'
 }
 
 

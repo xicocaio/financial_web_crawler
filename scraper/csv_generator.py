@@ -6,7 +6,8 @@ import pandas as pd
 
 SYMBOLS_DICT = {
     'btcusd': 'Bitcoin',
-    'appl': 'Apple'
+    'appl': 'Apple',
+    'sp500': 'S&P_500'
 }
 
 
