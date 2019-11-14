@@ -45,13 +45,17 @@ def generate_wsj_csv(abs_data_dir, stock='btcusd'):
                         for item in json_list['Summary']:
                             doc_id = int(item['DocumentIdUri'].split('/')[-1])
                             creation_date = item['CreateTimestamp']['Value']
-                            headline = item['Headline'] if item['Headline'] is None else item['Headline'].replace('\n',
-                                                                                                                  '').strip()
-                            # body_headline = item['BodyHeadline'] # for some reason the headline appears twice in the json, with different keys, not sure if they can differ sometimes
                             sub_headline = item.get('SubHeadline') if item.get('SubHeadline') is None else item[
                                 'SubHeadline'].replace('\n', '').strip()
                             abstract = item['Abstract']['ABSTRACT']['#text'].replace('\n',
                                                                                      '').strip() if 'Abstract' in item else None
+
+                            # normally Headline and BodyHeadline are the same, but sometimes, headline may be empty
+                            # string and so we check for empty string, and then use BodyHeadline instead
+                            if item['Headline']:
+                                headline = item['Headline'].replace('\n', '').strip()
+                            else:
+                                headline = item['BodyHeadline'].replace('\n', '').strip()
 
                             csv_writter.writerow(
                                 [doc_id, creation_date, SYMBOLS_DICT[stock], headline, sub_headline, abstract])
