@@ -31,7 +31,7 @@ def generate_wsj_csv(abs_data_dir, stock='btcusd'):
         with open(complete_fpath, "w") as csv_file, open(jl_file, "r") as input_file:
             csv_writter = csv.writer(csv_file, delimiter=';')
             csv_writter.writerow(
-                ['doc_id', 'datetime', 'company', 'title', 'sub_headline', 'abstract'])
+                ['doc_id', 'datetime', 'company', 'title', 'sub_headline', 'abstract', 'ref_tickers'])
 
             for line in input_file:
                 json_res = json.loads(line.strip())
@@ -57,7 +57,33 @@ def generate_wsj_csv(abs_data_dir, stock='btcusd'):
                             else:
                                 headline = item['BodyHeadline'].replace('\n', '').strip()
 
+                            # TODO: doing mentioned ticker gathering, remaisn testing what was done,
+                            #  and including information bout the mentioned category which should
+                            #  be mentioned as it can be puzzling, because it is not clear what is the used
+                            #  classification criteria. Also, this is becoming a big string, tha tmay be hard to
+                            #  deal with in the notebook.
+                            # Example of json for using as ref:                     "Instrument": [
+                            #                         {
+                            #                             "Type": [
+                            #                                 {
+                            #                                     "Namespace": "http://service.marketwatch.com/ws/2005/09/newscloud/display",
+                            #                                     "Name": "Prominent",
+                            #                                     "IsEmpty": false
+                            #                                 }
+                            #                             ],
+                            #                             "Ticker": "GOOGL",
+                            #                             "Exchange": {
+                            #                                 "CountryCode": "US"
+                            #                             }
+                            #                         },
+                            ref_tickers = []
+                            if item['Instrument']:
+                                for tick in item['Instrument']:
+                                    ref_tickers.append(item['Instrument']['Exchange']['CountryCode'] + ':'
+                                                       + item['Instrument']['Ticker'])
+
                             csv_writter.writerow(
-                                [doc_id, creation_date, SYMBOLS_DICT[stock], headline, sub_headline, abstract])
+                                [doc_id, creation_date, SYMBOLS_DICT[stock], headline, sub_headline, abstract,
+                                 ref_tickers])
 
         remove_duplicates(complete_fpath)
