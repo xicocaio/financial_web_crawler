@@ -3,9 +3,11 @@ import os
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 from linyphiidae.spiders.wsj_news_spider import WSJNewsSpider
+from linyphiidae.spiders.crypto_sitemap_spider import CryptoSitemapSpider
 
 spider_classes = {
-    'wsj_news': WSJNewsSpider
+    'wsj_news': WSJNewsSpider,
+    'crypto_sitemap': CryptoSitemapSpider
 }
 
 

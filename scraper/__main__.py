@@ -6,15 +6,15 @@ import sys
 from datetime import datetime
 
 from crawler_manager import run_crawler
-from csv_generator import generate_wsj_csv
+from csv_generator import generate_wsj_csv, generate_html_csv
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = BASE_DIR + '/data'
 
 
-# generating dir path for storing scrapped data
-def generate_dir(stock, website='wsj_news'):
-    abs_dir_path = DATA_DIR + '/{}/{}/'.format(website, stock.upper())
+# generating dest dir path for storing scrapped data
+def generate_dest_path(stock, crawl_type='api', website='wsj_news'):
+    abs_dir_path = DATA_DIR + '/{}/{}/{}/'.format(crawl_type, website, stock.upper())
 
     # directory generation
     if abs_dir_path and not os.path.isdir(abs_dir_path):
@@ -22,6 +22,14 @@ def generate_dir(stock, website='wsj_news'):
         os.makedirs(abs_dir_path)
 
     return abs_dir_path
+
+
+# validating the crawl types
+def validate_crawl_type(crawl_type):
+    if crawl_type not in ['api', 'website']:
+        raise ValueError('\'{}\' mode option is invalid'.format(crawl_type))
+
+    return crawl_type
 
 
 # validating the avilable modes
@@ -50,14 +58,19 @@ def main(**kwargs):
     mode = validate_mode(kwargs.get('mode')) if 'mode' in kwargs else None
     stock = kwargs.get('stock') if 'stock' in kwargs else 'btcusd'
     max_elems = int(kwargs.get('max_elems')) if 'max_elems' in kwargs else 100
+    crawl_type = validate_crawl_type(kwargs.get('crawl_type')) if 'crawl_type' in kwargs else None
+    website = kwargs.get('website') if 'website' in kwargs else 'wsj_news'
 
-    abs_data_dir_path = generate_dir(stock=stock)
+    abs_data_dir_path = generate_dest_path(stock=stock, crawl_type=crawl_type, website=website)
 
     if step == 'scrap' or step == 'all':
-        run_crawler(abs_data_dir_path, mode, max_requests, end_time, start_time, kwargs.get('website'),
+        run_crawler(abs_data_dir_path, mode, max_requests, end_time, start_time, website,
                     stock, max_elems)
     if step == 'gen_csv' or step == 'all':
-        generate_wsj_csv(abs_data_dir_path, stock)
+        if crawl_type == 'api':
+            generate_html_csv(abs_data_dir_path, stock)
+        else:
+            generate_wsj_csv(abs_data_dir_path, stock)
 
 
 if __name__ == '__main__':
