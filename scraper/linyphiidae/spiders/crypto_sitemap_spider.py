@@ -33,7 +33,7 @@ class CryptoSitemapSpider(scrapy.spiders.SitemapSpider):
     #     Rule(LinkExtractor(allow=('^(.*?)\/post-sitemap[0-9].xml', )), callback='parse_item'),
     # )
 
-    def __init__(self, mode, max_requests, end_time, start_time, abs_data_dir='', stock='btcusd', max_elems=100, *args,
+    def __init__(self, mode, max_requests, end_time, start_time, stock_info, abs_data_dir, max_elems=100, *args,
                  **kwargs):
         super(CryptoSitemapSpider, self).__init__(*args, **kwargs)
 
@@ -43,8 +43,8 @@ class CryptoSitemapSpider(scrapy.spiders.SitemapSpider):
         # # 'file:///path/to/file.html'
         # self.start_url = self.sitemap_urls[0] if not offline else 'file:///' + abs_data_dir + '.html'
 
-        self.stock = stock
-        self.abs_data_dir = abs_data_dir
+        self.stock = stock_info['symbol']
+        self.abs_data_dir = abs_data_dir[stock_info['symbol']]
 
     # method for restricting sites by date
     # also this should restrict the pages to be crawled

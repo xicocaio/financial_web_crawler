@@ -53,11 +53,19 @@ $ python scraper
 $ python scraper --step=gen_csv
 ```
 
+* Only stocks present in the `companies_list.csv` are allowed to run if `--website=wsj_news`.
+So if necessary, include new entries  in this file following previous entries as examples.
+
+* Required params:
+
+  `--crawl_type` allowed values: `api`, `website`
+  
+  `--stock` a single stock ticker present in the file `companies_list.csv`
+  or the value `list` to run for all stocks in `companies_list.csv` 
+
 * When no params are passed the default mode of this scraper runs a crawler with the following characteristics:
   
   `--website=wsj_news` for wall street journal API
-  
-  `--stock=btcusd` for bitcoin asset
   
   `--mode=default` default operation mode
   
@@ -75,7 +83,7 @@ $ python scraper --step=gen_csv
 * Example to run with all possible fields:
 
 ```bash
-$ python scraper --website=wsj_news --stock=btcusd --mode=default --step=all --max_requests=2 --end_time=2019-10-18T18:59:08 --start_time=2019-11-12T22:30:00
+$ python scraper --crawl_type=api --website=wsj_news --stock=btcusd --mode=default --step=all --max_requests=2 --end_time=2019-10-18T18:59:08 --start_time=2019-11-12T22:30:00
 ```
 
 * Example to run greedy mode:
@@ -106,7 +114,15 @@ $ python scraper --website=wsj_news --stock=btcusd --mode=greedy
    - News BTC
     
    - Be In Crypto
+   
+   **Design improvements**
+    
+   - It seem scrapy expects all loops in the same website are self-contained
 
+   **Known issues**
+    
+   - See open issues in github
+    
 
 ## Final considerations
 

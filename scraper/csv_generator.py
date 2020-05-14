@@ -3,17 +3,13 @@ import os
 import csv
 import json
 import pandas as pd
+import datetime
+import pytz
 
-from scrapy.selector import Selector
 from scrapy.http import HtmlResponse
 
-# scrapy.selector.Selector
 
-SYMBOLS_DICT = {
-    'btcusd': 'Bitcoin',
-    'aapl': 'Apple',
-    'sp500': 'S&P_500'
-}
+# scrapy.selector.Selector
 
 
 # this opens csv, remove duplicates and save the csv again
@@ -27,18 +23,15 @@ def remove_duplicates(filename, column):
     df.to_csv(filename, sep=';', encoding='utf-8', index=False)
 
 
-def generate_html_csv(abs_data_dir, stock='btcusd'):
-    # all_files = glob.glob(abs_data_dir + "*.html")
-    # all_files = glob.glob(
-    #     abs_data_dir + "post-sitemap28/2019-05-30-will-bitcoin-margin-trading-help-binance-and-coinbase-survive-big-banks-entering-crypto.html")
-    # all_files = glob.glob(
-    #     abs_data_dir + "post-sitemap28/" + "*.html")
+def generate_html_csv(abs_data_dir, stock_info):
+    f_path = abs_data_dir[stock_info['symbol']]
 
-    sub_dirs = next(os.walk(abs_data_dir))[1]  # get list of sub_dirs
+    sub_dirs = next(os.walk(f_path))[1]  # get list of sub_dirs
 
+    # TODO: fix this naming part, it should be similar to the way we do it in the wsj_news_spider
     dest_fname = 'newsbtc_2020-05-07T21:23:13'
 
-    complete_fpath = abs_data_dir + dest_fname + '.csv'
+    complete_fpath = f_path + dest_fname + '.csv'
 
     with open(complete_fpath, "w") as csv_file:
         # csv_writter = csv.writer(csv_file, delimiter=';', quoting=csv.QUOTE_NONNUMERIC)
@@ -48,7 +41,7 @@ def generate_html_csv(abs_data_dir, stock='btcusd'):
         src = 'news_btc'
 
         for sub_dir in sub_dirs:
-            all_files = glob.glob(abs_data_dir + sub_dir + "/*.html")
+            all_files = glob.glob(f_path + sub_dir + "/*.html")
             for html_file in all_files:
                 # getting only filename without extension and path
                 filename = os.path.basename(html_file).split('.html')[0]
@@ -59,7 +52,7 @@ def generate_html_csv(abs_data_dir, stock='btcusd'):
 
                     doc_id = int(res.xpath('//div/@data-postid').get())
                     # TODO: maybe get data from other title, because some of the titles are wrong
-                    # TODO: there is one nan case, maybe use another title surce for this case:
+                    # TODO: there is one nan case, maybe use another title source for this case:
                     # 14642	165393	2018-01-08T13:19:57+00:00	Bitcoin	NaN	https://youtu.be/bAxe9vbHn3Y	NaN	newsbtc	NaN	['uncategorized']	NaN
                     headline = res.xpath('//title/text()').get().replace('| NewsBTC', '').strip(' ')
 
@@ -91,18 +84,22 @@ def generate_html_csv(abs_data_dir, stock='btcusd'):
                     tags = []
 
                     csv_writter.writerow(
-                        [doc_id, published_time, modified_time, src, 'BTCUSD', headline, sub_headline, categs, tags])
+                        [doc_id, published_time, modified_time, src, stock_info['name'], headline, sub_headline, categs,
+                         tags])
 
     remove_duplicates(complete_fpath, column='doc_id')
 
 
 # NOTE: this code can also be useful to merge response from different runs that were not already processed to csv
-def generate_wsj_csv(abs_data_dir, stock='btcusd'):
-    all_files = glob.glob(abs_data_dir + "*.jl")
+def generate_wsj_csv(abs_data_dir, stock_info):
+    f_path = abs_data_dir[stock_info['symbol']]
+    all_files = glob.glob(f_path + "*.jl")
+    est_tz = pytz.timezone('America/New_York')
 
     for jl_file in all_files:
-        filename = os.path.basename(jl_file).split('.jl')[0]  # getting only filename without extension and path
-        complete_fpath = abs_data_dir + filename + '.csv'
+        filename = stock_info['symbol'] + '_' + os.path.basename(jl_file).split('.jl')[
+            0]  # getting only filename without extension and path
+        complete_fpath = f_path + filename + '.csv'
 
         with open(complete_fpath, "w") as csv_file, open(jl_file, "r") as input_file:
             csv_writter = csv.writer(csv_file, delimiter=';')
@@ -112,7 +109,6 @@ def generate_wsj_csv(abs_data_dir, stock='btcusd'):
             for line in input_file:
                 json_res = json.loads(line.strip())
 
-                # TODO: why is being called again?
                 csv_writter = csv.writer(csv_file, delimiter=';', quoting=csv.QUOTE_NONNUMERIC)
 
                 for json_list in json_res['HeadlinesResponse']:
@@ -121,7 +117,14 @@ def generate_wsj_csv(abs_data_dir, stock='btcusd'):
                     if json_list['Summary']:
                         for item in json_list['Summary']:
                             doc_id = int(item['DocumentIdUri'].split('/')[-1])
-                            creation_date = item['CreateTimestamp']['Value']
+
+                            # WSJ website uses America/New_York (EST) timezone, although it does not appear in the API
+                            # for the timezone ambiguity on changing instants, we found WSJ to not be reliable, and
+                            # taking some time to update entries, and just for consistency, we force the time forward
+                            # by setting `is_dst=True`
+                            creation_date = est_tz.localize(
+                                datetime.datetime.fromisoformat(item['CreateTimestamp']['Value']), is_dst=True)
+
                             sub_headline = item.get('SubHeadline') if item.get('SubHeadline') is None else item[
                                 'SubHeadline'].replace('\n', '').strip()
                             abstract = item['Abstract']['ABSTRACT']['#text'].replace('\n',
@@ -134,10 +137,10 @@ def generate_wsj_csv(abs_data_dir, stock='btcusd'):
                             else:
                                 headline = item['BodyHeadline'].replace('\n', '').strip()
 
-                            # TODO: doing mentioned ticker gathering, remaisn testing what was done,
+                            # TODO: doing mentioned ticker gathering, remains testing what was done,
                             #  and including information bout the mentioned category which should
                             #  be mentioned as it can be puzzling, because it is not clear what is the used
-                            #  classification criteria. Also, this is becoming a big string, tha tmay be hard to
+                            #  classification criteria. Also, this is becoming a big string, that may be hard to
                             #  deal with in the notebook.
                             # Example of json for using as ref:                     "Instrument": [
                             #                         {
@@ -154,13 +157,13 @@ def generate_wsj_csv(abs_data_dir, stock='btcusd'):
                             #                             }
                             #                         },
                             ref_tickers = []
-                            if item['Instrument']:
+                            if 'Instrument' in item:
                                 for tick in item['Instrument']:
-                                    ref_tickers.append(item['Instrument']['Exchange']['CountryCode'] + ':'
-                                                       + item['Instrument']['Ticker'])
+                                    ref_tickers.append(tick['Exchange']['CountryCode'] + ':'
+                                                       + tick['Ticker'])
 
                             csv_writter.writerow(
-                                [doc_id, creation_date, SYMBOLS_DICT[stock], headline, sub_headline, abstract,
+                                [doc_id, creation_date, stock_info['name'], headline, sub_headline, abstract,
                                  ref_tickers])
 
         remove_duplicates(complete_fpath, column='doc_id')

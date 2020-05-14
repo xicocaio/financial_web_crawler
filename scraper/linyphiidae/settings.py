@@ -90,3 +90,6 @@ AUTOTHROTTLE_DEBUG = False
 
 # Logging settings
 LOG_LEVEL = 'INFO'  # log_levels_list: https://docs.scrapy.org/en/latest/topics/logging.html#log-levels
+
+# Retry settings
+RETRY_TIMES = 3

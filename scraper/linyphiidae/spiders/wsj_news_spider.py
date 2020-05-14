@@ -1,13 +1,11 @@
 import scrapy
 from scrapy.http import JsonRequest
+from scrapy.spidermiddlewares.httperror import HttpError
 
 import json
 
-SYMBOLS_DICT = {
-    'btcusd': 'symb!~!US:BTCUSD',
-    'aapl': 'symb!~!US:AAPL',
-    'sp500': 'symb!~!US:SPX'
-}
+# 2500 seems to be the max number of elements on response, however, sometimes this length leads to errors
+MAX_ALLOWED_ELEMENTS = 2250
 
 
 class WSJNewsSpider(scrapy.Spider):
@@ -17,11 +15,11 @@ class WSJNewsSpider(scrapy.Spider):
     initial_time = None
     reqs_number = 0
 
-    # for adding more than one use ',!', example:
-    # 'symb!~!US:BTCUSD!,!symb!~!US:AAPL'
+    # stock symbols follow the following examples of bitcoin and apple:
+    # 'symb!~!US:BTCUSD!, !symb!~!US:AAPL'
 
-    def __init__(self, mode, max_requests, end_time, start_time, abs_data_dir='', stock='btcusd', max_elems=100, *args,
-                 **kwargs):
+    def __init__(self, mode, max_requests, end_time, start_time, stock_info, abs_data_paths, max_elems=100,
+                 *args, **kwargs):
         super(WSJNewsSpider, self).__init__(*args, **kwargs)
 
         # there are only to modes, greedy and default
@@ -30,19 +28,23 @@ class WSJNewsSpider(scrapy.Spider):
                 'WARNING: the greedy mode runs to exhausting all data available in the desired website about the specified stock this may lead to banishment if not done properly')
             self.max_requests = None
             self.end_time = None
-            self.start_url = 'https://api.wsj.net/api/slinger/headlines/806/' + str(2500)  # tested max number of elements on response
+            self.start_url = 'https://api.wsj.net/api/slinger/headlines/806/' + str(MAX_ALLOWED_ELEMENTS)
         else:
             self.max_requests = max_requests if max_requests else 2
             self.end_time = end_time if end_time else None  # oldest possible time
-            self.start_time = start_time if start_time else None  # time to start requests
             self.start_url = 'https://api.wsj.net/api/slinger/headlines/806/' + str(max_elems)
 
-        self.stock = stock
-        self.abs_data_dir = abs_data_dir
+        self.start_time = start_time if start_time else None  # time to start requests
+
+        self.unprocessed_stock = stock_info.copy()
+        self.current_stock_symbol, self.current_stock_info = self.unprocessed_stock.popitem()
+
+        self.abs_data_paths = abs_data_paths.copy()
+        self.abs_data_dir = self.abs_data_paths[self.current_stock_symbol]
 
         self.start_query_params = {
             'version': '3',
-            'opProp': SYMBOLS_DICT[self.stock]
+            'opProp': 'symb!~!' + self.current_stock_info['wsj_ticker']
         }
 
         if start_time:
@@ -50,7 +52,27 @@ class WSJNewsSpider(scrapy.Spider):
             self.start_query_params['direction'] = 'older'
 
     def start_requests(self):
-        yield JsonRequest(url=self.start_url, data=self.start_query_params)
+        print('\n--- Starting crawl of stock: {} ({}) ---\n'.format(self.current_stock_info['name'],
+                                                                    self.current_stock_info['symbol'].upper()))
+        yield JsonRequest(url=self.start_url, data=self.start_query_params, dont_filter=True)
+
+    def start_new_stock(self, response):
+        if self.unprocessed_stock:
+            self.current_stock_symbol, self.current_stock_info = self.unprocessed_stock.popitem()
+
+            print('\n--- Starting crawl of stock: {} ({}) ---\n'.format(self.current_stock_info['name'],
+                                                                        self.current_stock_info['symbol'].upper()))
+
+            self.reqs_number = 0
+
+            self.start_query_params = {
+                'version': '3',
+                'opProp': 'symb!~!' + self.current_stock_info['wsj_ticker']
+            }
+
+            self.abs_data_dir = self.abs_data_paths[self.current_stock_symbol]
+
+            yield JsonRequest(url=response.url, data=self.start_query_params, dont_filter=True, callback=self.parse)
 
     def parse(self, response):
         json_response = json.loads(response.body_as_unicode())
@@ -59,9 +81,9 @@ class WSJNewsSpider(scrapy.Spider):
 
         # dealing with this HeadlinesResponse that is a placeholder for lists
         for json_list in json_response['HeadlinesResponse']:
-            # the sumamry object is one to check to see if there is any more
+            # the summary object is one to check to see if there is any more
             # response beyond a given date
-            if json_list['Summary']:
+            if 'Summary' in json_list:
                 oldest_date_obj = min(json_list['Summary'], key=lambda x: x[
                     'CreateTimestamp']['Value'])
 
@@ -72,7 +94,7 @@ class WSJNewsSpider(scrapy.Spider):
                     'HeadlinesResponse': json_response['HeadlinesResponse'],
                 }
 
-                # conidtion for stopping is if max_requests was or max end time was reached
+                # condition for stopping is if max_requests was or max end time was reached
                 can_stop = (self.max_requests and self.reqs_number >= self.max_requests) or (
                         self.end_time and oldest_res_date <= self.end_time)
 
@@ -85,5 +107,23 @@ class WSJNewsSpider(scrapy.Spider):
                     # This param seems to be useless. But the official website request uses it.
                     query_params['docid'] = doc_id
 
-                    yield JsonRequest(url=response.url, data=query_params,
+                    yield JsonRequest(url=response.url, data=query_params, dont_filter=True,
                                       callback=self.parse)
+                # start new stock
+                else:
+                    yield from self.start_new_stock(response)
+            else:
+                yield from self.start_new_stock(response)
+
+    def errback_httpbin(self, failure):
+        # log all failures
+        self.logger.error(repr(failure))
+
+        # in case you want to do something special for some errors,
+        # you may need the failure's type:
+
+        if failure.check(HttpError):
+            # these exceptions come from HttpError spider middleware
+            # you can get the non-200 response
+            response = failure.value.response
+            self.logger.error('HttpError on %s', response.url)
