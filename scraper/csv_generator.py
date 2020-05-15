@@ -104,7 +104,7 @@ def generate_wsj_csv(abs_data_dir, stock_info):
         with open(complete_fpath, "w") as csv_file, open(jl_file, "r") as input_file:
             csv_writter = csv.writer(csv_file, delimiter=';')
             csv_writter.writerow(
-                ['doc_id', 'datetime', 'company', 'title', 'sub_headline', 'abstract', 'ref_tickers'])
+                ['doc_id', 'datetime', 'ticker', 'company', 'title', 'sub_headline', 'abstract', 'ref_tickers'])
 
             for line in input_file:
                 json_res = json.loads(line.strip())
@@ -163,7 +163,7 @@ def generate_wsj_csv(abs_data_dir, stock_info):
                                                        + tick['Ticker'])
 
                             csv_writter.writerow(
-                                [doc_id, creation_date, stock_info['name'], headline, sub_headline, abstract,
-                                 ref_tickers])
+                                [doc_id, creation_date, stock_info['symbol'], stock_info['name'], headline,
+                                 sub_headline, abstract, ref_tickers])
 
         remove_duplicates(complete_fpath, column='doc_id')
