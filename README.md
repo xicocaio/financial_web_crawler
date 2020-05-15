@@ -5,7 +5,7 @@ Web Crawler for gathering financial news for scientific research purposes.
 
 The stack bellow was used mostly due to its ease of installation, configuration, and also efficiency and portability.
 * Language: Python (3.7.4)
-* Core crawler engine: Scrapy (1.8.0)
+* Core crawler engine: Scrapy (2.1.0)
 
 ## Pre-installation
 
