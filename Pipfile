@@ -8,6 +8,7 @@ verify_ssl = true
 [packages]
 scrapy = "*"
 pandas = "*"
+pytz = "*"
 
 [requires]
 python_version = "3.7"
