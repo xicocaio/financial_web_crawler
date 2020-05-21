@@ -54,7 +54,7 @@ class WSJNewsSpider(scrapy.Spider):
     def start_requests(self):
         print('\n--- Starting crawl of stock: {} ({}) ---\n'.format(self.current_stock_info['name'],
                                                                     self.current_stock_info['symbol'].upper()))
-        yield JsonRequest(url=self.start_url, data=self.start_query_params, dont_filter=True)
+        yield JsonRequest(url=self.start_url, data=self.start_query_params, dont_filter=False)
 
     def start_new_stock(self, response):
         if self.unprocessed_stock:
@@ -72,9 +72,12 @@ class WSJNewsSpider(scrapy.Spider):
 
             self.abs_data_dir = self.abs_data_paths[self.current_stock_symbol]
 
-            yield JsonRequest(url=response.url, data=self.start_query_params, dont_filter=True, callback=self.parse)
+            yield JsonRequest(url=response.url, data=self.start_query_params, dont_filter=False, callback=self.parse)
 
     def parse(self, response):
+        if response.xpath("//*[contains(text(), 'timed out')]"):
+            print('\n Timeout request {}: \n'.format(response))
+
         json_response = json.loads(response.body_as_unicode())
 
         self.reqs_number += 1
@@ -107,7 +110,7 @@ class WSJNewsSpider(scrapy.Spider):
                     # This param seems to be useless. But the official website request uses it.
                     query_params['docid'] = doc_id
 
-                    yield JsonRequest(url=response.url, data=query_params, dont_filter=True,
+                    yield JsonRequest(url=response.url, data=query_params, dont_filter=False,
                                       callback=self.parse)
                 # start new stock
                 else:
