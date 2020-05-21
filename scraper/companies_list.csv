@@ -20,4 +20,6 @@ btcusd;US:BTCUSD;Bitcoin
 sp500;US:SPX;S&P_500
 aapl;US:AAPL;Apple
 ethusd;US:ETHUSD;Ethereum
-ltcusd;US:US:LTCUSD;Litecoin
+ltcusd;US:LTCUSD;Litecoin
+nflx;US:NFLX;Netflix
+dis;US:DIS;Disney
